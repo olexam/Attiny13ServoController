@@ -7,86 +7,83 @@
  *  Programmer: "Arduino as ISP"
  */
 
-#define PHR A1   //photoresistor for set position of servo
-#define SERVO 0   //pin for servo connection
-#define BTN 1   //pin for mode button
+// #include <Button.h>
 
+#define PHR A1              // pin for photoresistor connection
+#define SERVO 0             // pin for servo connection
+#define BTN 1               // pin for controll button
+#define OPEN 90             // servo open position
+#define CLOSED 150          // servo closed positionopen position
+#define PULSES 20           // number of pulses sent to servo
+#define PHR_SENSETIVITY 100  // Photoresistor sensitivity level, less is lower
+#define BTN_TRIGGER_MODE;
+
+byte mode = CLOSED;   //mode of servo open or closed
+
+#ifdef BTN_TRIGGER_MODE
 byte last_state = 0;   //last state of button
-byte pos = 0;   //current position of mode
-
+#endif
 
 void setup(){  
-  //Serial.begin(9600);
   //-----setup up all pins-----
-  pinMode(PHR, INPUT);
-  pinMode(SERVO, OUTPUT);
+  pinMode(PHR, INPUT_PULLUP);
   pinMode(BTN, INPUT_PULLUP);
+  pinMode(SERVO, OUTPUT);
   //-----setup up all pins-----
   
   #ifdef __AVR_ATtiny13__
-  analogReference(0);//this line is essential for the Attiny13
+  analogReference(0); //this line is essential for the Attiny13
   #endif
+  moveServo(CLOSED);
 }
 
 
 void loop(){
-/*
-  //-----potentiometer mode-----
-  if(pos == 0){   
-    int val = analogRead(PHR);   
-     
-    if(val < 5) val = 5;   //ignore first 10 steps
-    if(val > 1018) val = 1018;   //ignore last 13 steps
-    val = 180-map(val, 5, 1018, 0, 180);
-    
-    pulseOut(SERVO, val);
-  
-    if(check_change_mode() == 1) pos = 1;
-  }
-  //-----potentiometer mode-----
-*/
 
-  //-----auto mode-----
-  for(byte a = 0; a < 180; a ++){
-    pulseOut(SERVO, a);
-    
-    if(check_change_mode() == 1){
-      pos = 2;
-      break;    
-    }
-    delay(20);
+  if(analogRead(PHR) < PHR_SENSETIVITY) {
+    pulseOut(SERVO, OPEN);
+    return;
   }
-  delay(10);
-  
-  if(pos == 1){
-    for(byte a = 180; a > 0; a --){
-      pulseOut(SERVO, a);
-      delay(20);
-    }
-    delay(10);
-  }
-  //-----auto mode-----
 
-  delay(20);
+#ifdef BTN_TRIGGER_MODE
+  if(check_button_pressed() == 1) {
+    if (mode == CLOSED) { // open
+      moveServo(OPEN);
+      mode = 1;
+    } else if (mode == 1) { //close
+      moveServo(CLOSED);
+      mode=CLOSED;
+    }
+  }
+#else
+  byte btnState = !digitalRead(BTN);
+  if(mode == CLOSED && btnState == 1){
+    moveServo(OPEN);
+    mode = OPEN;
+  }
+  if(mode == OPEN && btnState == 0){
+    moveServo(CLOSED);
+    mode=CLOSED;
+  }
+#endif
+
 }
 
-
+void moveServo(byte degree) {
+  for(byte i = 0; i < PULSES; i++) {
+    pulseOut(SERVO, degree);
+  }
+}
 
 void pulseOut(byte pin, byte p){
   digitalWrite(pin, HIGH);
   delayMicroseconds(map(p, 0, 180, 544, 2400));  
   digitalWrite(pin, LOW);
+  delay(10);
 }
 
-/*
-void delay_us(int tm){
-  //while(tm --){
-    delayMicroseconds(tm);
-  //}
-}
-*/
-
-byte check_change_mode(){
+#ifdef BTN_TRIGGER_MODE
+byte check_button_pressed(){
   byte rtn = 0;
   byte state = !digitalRead(BTN);
   if(state == 1 && last_state == 0){
@@ -97,3 +94,4 @@ byte check_change_mode(){
 
   return rtn;
 }
+#endif
