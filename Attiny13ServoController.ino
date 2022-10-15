@@ -12,16 +12,19 @@
 #define PHR A1              // pin for photoresistor connection
 #define SERVO 0             // pin for servo connection
 #define BTN 1               // pin for controll button
-#define OPEN 90             // servo open position
-#define CLOSED 150          // servo closed positionopen position
-#define PULSES 20           // number of pulses sent to servo
-#define PHR_SENSETIVITY 100  // Photoresistor sensitivity level, less is lower
-#define BTN_TRIGGER_MODE;
+#define PHR_SENSETIVITY 75  // Photoresistor sensitivity level, less is lower
 
-byte mode = CLOSED;   //mode of servo open or closed
+#define OPEN 90             // servo open position
+#define CLOSED 150          // servo closed position
+
+#define PULSES 20           // number of pulses sent to servo
+
+#define BTN_TRIGGER_MODE;   // button mode: if trigger is enabled, servo switch position on click, if not, switch position to open while button down
+
+byte mode = CLOSED;         //mode of servo open or closed
 
 #ifdef BTN_TRIGGER_MODE
-byte last_state = 0;   //last state of button
+byte last_state = 0;        //last state of button
 #endif
 
 void setup(){  
